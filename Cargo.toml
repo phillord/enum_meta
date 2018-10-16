@@ -2,6 +2,13 @@
 name = "enum_meta"
 version = "0.1.0"
 authors = ["Phillip Lord <phillip.lord@newcastle.ac.uk>"]
+description = "Add metadata to Enum Variants"
+
+repository = "https://github.com/phillord/enum_meta"
+keywords = ["enum", "metadata", "language"]
+license = "MIT/Apache-2.0"
+categories = ["data-structures"]
+
 
 [dependencies]
 lazy_static = "1.1.0"

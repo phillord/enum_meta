@@ -5,6 +5,9 @@ This crate enables attaching metadata to C-like Enums (or strictly any
 Enum). The metadata can be of an arbitrary type, but must be of the
 same type for the all variants although can be different values.
 
+
+[![Travis-CI Status](https://travis-ci.org/phillord/enum_meta.svg?branch=master)](https://travis-ci.org/phillord/enum_meta)
+
 This fills the use-case when the Enum variants are flags for something
 else -- for example, HTTP error codes, or parts of a syntax tree
 associated with some explicit string rendering when concretized.
