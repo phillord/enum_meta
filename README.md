@@ -17,35 +17,46 @@ to the enum. This can be done at a separate location from the
 declaration of the enum. The first macro is for values that are
 determined at compile time:
 
+```rust
+enum Colour {
+   Red, Orange, Green
+}
 
-    enum Colour {
-       Red, Orange, Green
-    }
+meta!{
+   Colour, &'static str;
+   Red, "Red";
+   Orange, "Orange";
+   Green, "Green";
+}
 
-    meta!{
-       Colour, &'static str;
-       Red, "Red";
-       Orange, "Orange";
-       Green, "Green";
-    }
-
-    assert_eq!(Red.meta(), "Red");
-
+assert_eq!(Red.meta(), "Red");
+```
 
 And the second for where values are calculated at runtime.
 
-    pub enum Colour{
-        Red,
-        Orange,
-        Green
-    }
+```rust
+pub enum Colour{
+    Red,
+    Orange,
+    Green
+}
 
-    lazy_meta!{
-        Colour, &String, META_Colour2
-        Red, format!("{}:{}", 1, "Red");
-        Orange, format!("{}:{}", 2, "Orange");
-        Green, format!("{}:{}", 3, "Green");
-    }
+lazy_meta!{
+    Colour, &String, META_Colour2
+    Red, format!("{}:{}", 1, "Red");
+    Orange, format!("{}:{}", 2, "Orange");
+    Green, format!("{}:{}", 3, "Green");
+}
+```
 
 The former returns values directly, while the second returns
 references. Values are only calculated once on first usage.
+
+## License
+
+Licensed under either of
+
+ * Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
+ * MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
+
+at your option.
