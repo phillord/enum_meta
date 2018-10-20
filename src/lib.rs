@@ -80,6 +80,37 @@ In this case, values are stored in a global variable whose name is
 provided (`META_Colour2` in this instance). Values returned are
 references to the given return type.
 
+Reverse lookup is not supported in-directly, by providing an `all`
+method which returns all the enum variants as a vector; this allows
+construction of a reverse lookup function; this is hard to achieve in
+general, requires putting a lot of constraints on the type of the
+metadata and can only sensibly support lookup by direct equality with
+the metadata.
+
+```
+#[macro_use] extern crate enum_meta;
+use enum_meta::*;
+
+// These derives are required by `assert_eq` rather than `lazy_meta`
+#[derive(Debug, Eq, PartialEq)]
+pub enum Colour{
+    Red,
+    Orange,
+    Green
+}
+
+meta!{
+    Colour, String;
+    Red, format!("{}:{}", 1, "Red");
+    Orange, format!("{}:{}", 2, "Orange");
+    Green, format!("{}:{}", 3, "Green");
+}
+
+fn main() {
+    assert_eq!(Colour::all(),
+              vec![Colour::Red, Colour::Orange, Colour::Green]);
+}
+```
 
 
 */
@@ -96,7 +127,8 @@ pub use std::mem::discriminant;
 pub use std::mem::Discriminant;
 
 /// Trait for accessing metadata
-pub trait Meta<R> {
+pub trait Meta<R>
+    where Self:Sized {
     fn meta(&self) -> R;
 }
 
@@ -115,6 +147,21 @@ macro_rules! meta {
                         }
                     )*
                 }
+            }
+        }
+
+        impl $enum_type {
+
+            // This code is used by always gives dead code warnings unless I
+            // switch them off. Don't know why.
+            #[allow(dead_code)]
+
+            pub fn all() -> Vec<$enum_type>{
+                vec![
+                    $(
+                        $enum_type::$enum_variant
+                    ),*
+                ]
             }
         }
     };
@@ -143,9 +190,8 @@ macro_rules! lazy_meta {
                         m.insert(discriminant(&$enum_type::$enum_variant),
                                  $return_expr);
                     )*
-
-                    m
-            };
+                        m
+                };
         }
 
         impl <'a> Meta<&'a $return_type> for $enum_type {
@@ -154,10 +200,22 @@ macro_rules! lazy_meta {
             }
         }
 
-        // This does nothing at all, but will fail if we do not pass all of
-        // the entities that we need.
-        #[allow(dead_code)]
         impl $enum_type {
+
+            // This code is used by always gives dead code warnings unless I
+            // switch them off. Don't know why.
+            #[allow(dead_code)]
+            pub fn all() -> Vec<$enum_type>{
+                vec![
+                    $(
+                        $enum_type::$enum_variant
+                    ),*
+                ]
+            }
+
+            // This does nothing at all, but will fail if we do not pass all of
+            // the entities that we need.
+            #[allow(dead_code)]
             fn meta_check(&self) {
                 match self {
                     $(
@@ -201,6 +259,28 @@ mod test {
         assert_eq!(Colour::Red.meta(), "Red");
         assert_eq!(Colour::Orange.meta(), "Orange");
         assert_eq!(Colour::Green.meta(), "Green");
+    }
+
+    #[test]
+    fn test_all(){
+        #[derive(Debug, Eq, PartialEq)]
+        enum Colour
+        {
+            Red,
+            Orange,
+            Green
+        }
+
+        meta!{
+            Colour, &'static str;
+            Red, "Red";
+            Orange, "Orange";
+            Green, "Green"
+        }
+
+        assert_eq!(vec![Colour::Red,
+                        Colour::Orange,
+                        Colour::Green], Colour::all());
     }
 
     #[test]
@@ -264,5 +344,29 @@ mod test {
         assert_eq!(Colour::Red.meta(), "Red");
         assert_eq!(Colour::Orange.meta(), "Orange");
         assert_eq!(Colour::Green.meta(), "Green");
+    }
+
+    #[test]
+    fn test_lazy_all(){
+        #[derive(Debug, Eq, PartialEq)]
+        enum Colour
+        {
+            Red,
+            Orange,
+            Green
+        }
+
+        lazy_meta!{
+            Colour, String, TEST1;
+            Red, "Red".to_string();
+            Orange, "Orange".to_string();
+            Green, "Green".to_string();
+        }
+
+        assert_eq!(Colour::all(),
+                   vec![Colour::Red,
+                        Colour::Orange,
+                        Colour::Green]
+                   );
     }
 }
