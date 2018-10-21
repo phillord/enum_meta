@@ -130,6 +130,7 @@ pub use std::mem::Discriminant;
 pub trait Meta<R>
     where Self:Sized {
     fn meta(&self) -> R;
+    fn all() -> Vec<Self>;
 }
 
 #[macro_export]
@@ -148,15 +149,8 @@ macro_rules! meta {
                     )*
                 }
             }
-        }
 
-        impl $enum_type {
-
-            // This code is used by always gives dead code warnings unless I
-            // switch them off. Don't know why.
-            #[allow(dead_code)]
-
-            pub fn all() -> Vec<$enum_type>{
+            fn all() -> Vec<$enum_type>{
                 vec![
                     $(
                         $enum_type::$enum_variant
@@ -198,21 +192,17 @@ macro_rules! lazy_meta {
             fn meta(&self) -> &'a $return_type {
                 $storage.get(&discriminant(&self)).unwrap()
             }
-        }
 
-        impl $enum_type {
-
-            // This code is used by always gives dead code warnings unless I
-            // switch them off. Don't know why.
-            #[allow(dead_code)]
-            pub fn all() -> Vec<$enum_type>{
+            fn all() -> Vec<$enum_type>{
                 vec![
                     $(
                         $enum_type::$enum_variant
                     ),*
                 ]
             }
+        }
 
+        impl $enum_type {
             // This does nothing at all, but will fail if we do not pass all of
             // the entities that we need.
             #[allow(dead_code)]
