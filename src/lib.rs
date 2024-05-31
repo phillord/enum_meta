@@ -1,7 +1,7 @@
 // Copyright 2018 Phillip Lord, Newcastle University
 //
 // Licensed under either the Apache License, Version 2.0 or the MIT
-// licence at your option. This file may not be copied, modified or
+// license at your option. This file may not be copied, modified or
 // distributed except according to those terms.
 
 /*!
@@ -117,18 +117,16 @@ fn main() {
 #![macro_use]
 
 #[allow(unused_imports)]
-#[macro_use] extern crate lazy_static;
-
-
-pub use lazy_static::*;
-
 pub use std::collections::HashMap;
 pub use std::mem::discriminant;
 pub use std::mem::Discriminant;
+pub use std::sync::OnceLock;
 
 /// Trait for accessing metadata
 pub trait Meta<R>
-    where Self:Sized {
+where
+    Self: Sized,
+{
     fn meta(&self) -> R;
     fn all() -> Vec<Self>;
 }
@@ -175,22 +173,20 @@ macro_rules! lazy_meta {
     ($enum_type:ident, $return_type:ty, $storage:ident;
      $($enum_variant:ident, $return_expr:expr);*
     ) => {
-        lazy_static! {
-            static ref $storage: HashMap<Discriminant<$enum_type>,$return_type>
-                = {
-                    let mut m = HashMap::new();
-
-                    $(
-                        m.insert(discriminant(&$enum_type::$enum_variant),
-                                 $return_expr);
-                    )*
-                        m
-                };
+        fn storage() -> &'static HashMap<Discriminant<$enum_type>,$return_type> {
+            static $storage: OnceLock<HashMap<Discriminant<$enum_type>,$return_type>> = OnceLock::new();
+            $storage.get_or_init(|| {
+                let mut hm = HashMap::new();
+                $(
+                    hm.insert(discriminant(&$enum_type::$enum_variant),$return_expr);
+                )*
+                hm
+            })
         }
 
         impl <'a> Meta<&'a $return_type> for $enum_type {
             fn meta(&self) -> &'a $return_type {
-                $storage.get(&discriminant(&self)).unwrap()
+                storage().get(&discriminant(&self)).unwrap()
             }
 
             fn all() -> Vec<$enum_type>{
@@ -231,15 +227,14 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_meta(){
-        enum Colour
-        {
+    fn test_meta() {
+        enum Colour {
             Red,
             Orange,
-            Green
+            Green,
         }
 
-        meta!{
+        meta! {
             Colour, &'static str;
             Red, "Red";
             Orange, "Orange";
@@ -252,37 +247,36 @@ mod test {
     }
 
     #[test]
-    fn test_all(){
+    fn test_all() {
         #[derive(Debug, Eq, PartialEq)]
-        enum Colour
-        {
+        enum Colour {
             Red,
             Orange,
-            Green
+            Green,
         }
 
-        meta!{
+        meta! {
             Colour, &'static str;
             Red, "Red";
             Orange, "Orange";
             Green, "Green"
         }
 
-        assert_eq!(vec![Colour::Red,
-                        Colour::Orange,
-                        Colour::Green], Colour::all());
+        assert_eq!(
+            vec![Colour::Red, Colour::Orange, Colour::Green],
+            Colour::all()
+        );
     }
 
     #[test]
-    fn test_meta_complex_return_type(){
-        enum Colour
-        {
+    fn test_meta_complex_return_type() {
+        enum Colour {
             Red,
             Orange,
-            Green
+            Green,
         }
 
-        meta!{
+        meta! {
             Colour, (&'static str, i64);
             Red, ("Red", 10);
             Orange, ("Orange", 11);
@@ -295,15 +289,14 @@ mod test {
     }
 
     #[test]
-    fn test_meta_trailing_semi(){
-        enum Colour
-        {
+    fn test_meta_trailing_semi() {
+        enum Colour {
             Red,
             Orange,
-            Green
+            Green,
         }
 
-        meta!{
+        meta! {
             Colour, &'static str;
             Red, "Red";
             Orange, "Orange";
@@ -316,15 +309,14 @@ mod test {
     }
 
     #[test]
-    fn test_lazy_meta(){
-        enum Colour
-        {
+    fn test_lazy_meta() {
+        enum Colour {
             Red,
             Orange,
-            Green
+            Green,
         }
 
-        lazy_meta!{
+        lazy_meta! {
             Colour, String, TEST1;
             Red, "Red".to_string();
             Orange, "Orange".to_string();
@@ -337,26 +329,24 @@ mod test {
     }
 
     #[test]
-    fn test_lazy_all(){
+    fn test_lazy_all() {
         #[derive(Debug, Eq, PartialEq)]
-        enum Colour
-        {
+        enum Colour {
             Red,
             Orange,
-            Green
+            Green,
         }
 
-        lazy_meta!{
+        lazy_meta! {
             Colour, String, TEST1;
             Red, "Red".to_string();
             Orange, "Orange".to_string();
             Green, "Green".to_string();
         }
 
-        assert_eq!(Colour::all(),
-                   vec![Colour::Red,
-                        Colour::Orange,
-                        Colour::Green]
-                   );
+        assert_eq!(
+            Colour::all(),
+            vec![Colour::Red, Colour::Orange, Colour::Green]
+        );
     }
 }
