@@ -173,20 +173,24 @@ macro_rules! lazy_meta {
     ($enum_type:ident, $return_type:ty, $storage:ident;
      $($enum_variant:ident, $return_expr:expr);*
     ) => {
-        fn storage() -> &'static HashMap<Discriminant<$enum_type>,$return_type> {
-            static $storage: OnceLock<HashMap<Discriminant<$enum_type>,$return_type>> = OnceLock::new();
-            $storage.get_or_init(|| {
-                let mut hm = HashMap::new();
-                $(
-                    hm.insert(discriminant(&$enum_type::$enum_variant),$return_expr);
-                )*
-                hm
-            })
+
+        impl $enum_type {
+            fn storage() -> &'static HashMap<Discriminant<$enum_type>,$return_type> {
+                static $storage: OnceLock<HashMap<Discriminant<$enum_type>,$return_type>> = OnceLock::new();
+                $storage.get_or_init(|| {
+                    let mut hm = HashMap::new();
+                    $(
+                        hm.insert(discriminant(&$enum_type::$enum_variant),$return_expr);
+                    )*
+                    hm
+                })
+            }
         }
 
-        impl <'a> Meta<&'a $return_type> for $enum_type {
+
+        impl<'a> Meta<&'a $return_type> for $enum_type {
             fn meta(&self) -> &'a $return_type {
-                storage().get(&discriminant(&self)).unwrap()
+                Self::storage().get(&discriminant(&self)).unwrap()
             }
 
             fn all() -> Vec<$enum_type>{
