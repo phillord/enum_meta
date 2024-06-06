@@ -80,7 +80,7 @@ In this case, values are stored in a global variable whose name is
 provided (`META_Colour2` in this instance). Values returned are
 references to the given return type.
 
-Reverse lookup is not supported in-directly, by providing an `all`
+Reverse lookup is now supported indirectly, by providing an `all`
 method which returns all the enum variants as a vector; this allows
 construction of a reverse lookup function; this is hard to achieve in
 general, requires putting a lot of constraints on the type of the
@@ -352,5 +352,75 @@ mod test {
             Colour::all(),
             vec![Colour::Red, Colour::Orange, Colour::Green]
         );
+    }
+
+    // Can we access meta in another namespace
+    #[test]
+    fn test_meta_access() {
+        use crate::test::test_meta::Number;
+
+        assert_eq!(Number::One.meta(), "one");
+    }
+
+    #[test]
+    fn test_lazy_meta_access() {
+        use crate::test::test_lazy_meta::Number;
+
+        assert_eq!(Number::One.meta(), &"one");
+    }
+
+    #[cfg(test)]
+    mod test_meta {
+        use crate::*;
+
+        pub enum Number {
+            One, Two, Three
+        }
+
+        meta! {
+            Number, &'static str;
+            One, "one";
+            Two, "two";
+            Three, "three";
+        }
+
+        // Define a second enum to make sure that we can define two
+        pub enum Alphabet {
+            A, B, C
+        }
+
+        meta! {
+            Alphabet, &'static str;
+            A, "A";
+            B, "B";
+            C, "C";
+        }
+    }
+
+    mod test_lazy_meta {
+        use crate::*;
+
+        pub enum Number {
+            One, Two, Three
+        }
+
+        lazy_meta! {
+            Number, &'static str, META_NUMBER;
+            One, "one";
+            Two, "two";
+            Three, "three";
+        }
+
+        // Define a second enum to make sure that we can define two
+        pub enum Alphabet {
+            A, B, C
+        }
+
+        lazy_meta! {
+            Alphabet, &'static str, META_ALPHABET;
+            A, "A";
+            B, "B";
+            C, "C";
+        }
     }
 }
